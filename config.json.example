@@ -1,0 +1,9 @@
+{
+    "account_map": {
+        "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045": "Assets:Ethereum:0xd8da"
+    },
+    "fee_account": "Expenses:Fees",
+    "expenses_account": "Expenses:Other",
+    "income_account": "Income:Other",
+    "etherscan_api_key": "ABCD1234"
+}
