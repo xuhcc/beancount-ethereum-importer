@@ -38,7 +38,7 @@ def parse_timestamp(timestamp: str) -> datetime.datetime:
 def get_normal_transactions(api_key: str, address: str) -> list:
     transactions = []
     for item in load_from_etherscan(api_key, address, 'txlist'):
-        if item['isError'] == 0:
+        if int(item['isError']) == 0:
             transaction = {
                 'tx_id': item['hash'],
                 'time': parse_timestamp(item['timeStamp']),
