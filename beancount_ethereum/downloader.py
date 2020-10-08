@@ -46,17 +46,18 @@ def get_normal_transactions(api_key: str, address: str) -> list:
                 'value': Decimal(item['value']) / WEI,
             }
             transactions.append(transaction)
-        transaction_fee = {
-            'tx_id': item['hash'],
-            'time': int(item['timeStamp']),
-            'from': item['from'],
-            'to': MINER,
-            'currency': 'ETH',
-            'value': (Decimal(item['gasUsed']) *
-                      Decimal(item['gasPrice']) /
-                      WEI),
-        }
-        transactions.append(transaction_fee)
+        if item['from'].lower() == address.lower():
+            transaction_fee = {
+                'tx_id': item['hash'],
+                'time': int(item['timeStamp']),
+                'from': item['from'],
+                'to': MINER,
+                'currency': 'ETH',
+                'value': (Decimal(item['gasUsed']) *
+                          Decimal(item['gasPrice']) /
+                          WEI),
+            }
+            transactions.append(transaction_fee)
     return transactions
 
 
