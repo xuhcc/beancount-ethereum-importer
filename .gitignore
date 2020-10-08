@@ -2,6 +2,6 @@ venv/
 __pycache__/
 .mypy_cache
 
+downloads/
 *.json
-*.pickle
 *.beancount

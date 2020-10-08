@@ -1,7 +1,6 @@
+import datetime
 import json
 import os
-import pickle
-from decimal import Decimal
 from itertools import groupby
 
 from beancount.ingest.importer import ImporterProtocol
@@ -20,7 +19,7 @@ class Importer(ImporterProtocol):
         return 'ethereum'
 
     def identify(self, file) -> bool:
-        return 'transactions.pickle' == os.path.basename(file.name)
+        return os.path.basename(file.name) == 'transactions.json'
 
     @property
     def account_map(self):
@@ -30,7 +29,7 @@ class Importer(ImporterProtocol):
     def _find_account(
         self,
         address: str,
-        amount: Decimal,
+        value: D,
         currency: str,
     ) -> str:
         if address == '0xffffffffffffffffffffffffffffffffffffffff':
@@ -38,7 +37,7 @@ class Importer(ImporterProtocol):
             account = self.config['fee_account']
         else:
             if address not in self.account_map:
-                if amount > 0:
+                if value > 0:
                     account = self.config['expenses_account']
                 else:
                     account = self.config['income_account']
@@ -48,8 +47,8 @@ class Importer(ImporterProtocol):
 
     def extract(self, file, existing_entries=None) -> list:
         # TODO: check for duplicates
-        with open(file.name, 'rb') as _file:
-            transactions = pickle.load(_file)
+        with open(file.name, 'r') as _file:
+            transactions = json.load(_file)
         entries = []
         key_func = lambda tx: tx['tx_id']  # noqa: E731
         transactions = sorted(transactions, key=key_func)
@@ -59,28 +58,30 @@ class Importer(ImporterProtocol):
             postings = []
             for transfer in transfers:
                 if tx_date is None:
-                    tx_date = transfer['time'].date()
-                if transfer['value'] == 0:
+                    tx_date = datetime.datetime.\
+                        fromtimestamp(transfer['time']).date()
+                value = D(transfer['value'])
+                if value == 0:
                     continue
                 account_from = self._find_account(
                     transfer['from'],
-                    -transfer['value'],
+                    -value,
                     transfer['currency'],
                 )
                 posting_from = Posting(
                     account_from,
-                    Amount(D(-transfer['value']), transfer['currency']),
+                    Amount(-value, transfer['currency']),
                     None, None, None, None,
                 )
                 postings.append(posting_from)
                 account_to = self._find_account(
                     transfer['to'],
-                    transfer['value'],
+                    value,
                     transfer['currency'],
                 )
                 posting_to = Posting(
                     account_to,
-                    Amount(D(transfer['value']), transfer['currency']),
+                    Amount(value, transfer['currency']),
                     None, None, None, None,
                 )
                 postings.append(posting_to)

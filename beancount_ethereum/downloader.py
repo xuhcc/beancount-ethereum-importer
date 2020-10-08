@@ -1,8 +1,6 @@
 import argparse
-import datetime
 import json
 import os
-import pickle
 from decimal import Decimal
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -35,17 +33,13 @@ def load_from_etherscan(api_key: str, address: str, action: str) -> list:
         raise RuntimeError(response)
 
 
-def parse_timestamp(timestamp: str) -> datetime.datetime:
-    return datetime.datetime.fromtimestamp(int(timestamp))
-
-
 def get_normal_transactions(api_key: str, address: str) -> list:
     transactions = []
     for item in load_from_etherscan(api_key, address, 'txlist'):
         if int(item['isError']) == 0:
             transaction = {
                 'tx_id': item['hash'],
-                'time': parse_timestamp(item['timeStamp']),
+                'time': int(item['timeStamp']),
                 'from': item['from'],
                 'to': item['to'],
                 'currency': 'ETH',
@@ -54,7 +48,7 @@ def get_normal_transactions(api_key: str, address: str) -> list:
             transactions.append(transaction)
         transaction_fee = {
             'tx_id': item['hash'],
-            'time': parse_timestamp(item['timeStamp']),
+            'time': int(item['timeStamp']),
             'from': item['from'],
             'to': MINER,
             'currency': 'ETH',
@@ -71,7 +65,7 @@ def get_internal_transactions(api_key: str, address: str) -> list:
     for item in load_from_etherscan(api_key, address, 'txlistinternal'):
         transaction = {
             'tx_id': item['hash'],
-            'time': parse_timestamp(item['timeStamp']),
+            'time': int(item['timeStamp']),
             'from': item['from'],
             'to': item['to'],
             'currency': 'ETH',
@@ -86,7 +80,7 @@ def get_erc20_transfers(api_key: str, address: str) -> list:
     for item in load_from_etherscan(api_key, address, 'tokentx'):
         transaction = {
             'tx_id': item['hash'],
-            'time': parse_timestamp(item['timeStamp']),
+            'time': int(item['timeStamp']),
             'from': item['from'],
             'to': item['to'],
             'currency': item['tokenSymbol'],
@@ -106,9 +100,9 @@ def main(config: dict, output_dir: str):
         transactions += get_internal_transactions(api_key, address)
         transactions += get_erc20_transfers(api_key, address)
     os.makedirs(output_dir, exist_ok=True)
-    output_file_path = os.path.join(output_dir, 'transactions.pickle')
-    with open(output_file_path, 'wb') as output_file:
-        pickle.dump(transactions, output_file)
+    output_file_path = os.path.join(output_dir, 'transactions.json')
+    with open(output_file_path, 'w') as output_file:
+        json.dump(transactions, output_file, indent=4, default=str)
     print(f'Transactions saved to {output_file_path}')
 
 
