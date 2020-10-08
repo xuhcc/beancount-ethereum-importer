@@ -4,12 +4,13 @@ import pickle
 from decimal import Decimal
 from itertools import groupby
 
-from beancount.ingest import importer
-from beancount.core import amount, data
+from beancount.ingest.importer import ImporterProtocol
+from beancount.core.amount import Amount
+from beancount.core.data import EMPTY_SET, Posting, Transaction, new_metadata
 from beancount.core.number import D
 
 
-class Importer(importer.ImporterProtocol):
+class Importer(ImporterProtocol):
 
     def __init__(self, config_path='config.json'):
         with open(config_path, 'r') as config_file:
@@ -66,9 +67,9 @@ class Importer(importer.ImporterProtocol):
                     -transfer['value'],
                     transfer['currency'],
                 )
-                posting_from = data.Posting(
+                posting_from = Posting(
                     account_from,
-                    amount.Amount(D(-transfer['value']), transfer['currency']),
+                    Amount(D(-transfer['value']), transfer['currency']),
                     None, None, None, None,
                 )
                 postings.append(posting_from)
@@ -77,21 +78,21 @@ class Importer(importer.ImporterProtocol):
                     transfer['value'],
                     transfer['currency'],
                 )
-                posting_to = data.Posting(
+                posting_to = Posting(
                     account_to,
-                    amount.Amount(D(transfer['value']), transfer['currency']),
+                    Amount(D(transfer['value']), transfer['currency']),
                     None, None, None, None,
                 )
                 postings.append(posting_to)
 
-            entry = data.Transaction(
-                data.new_metadata('', 0, metadata),
+            entry = Transaction(
+                new_metadata('', 0, metadata),
                 tx_date,
                 '*',
                 '',
                 '',
-                data.EMPTY_SET,
-                data.EMPTY_SET,
+                EMPTY_SET,
+                EMPTY_SET,
                 postings,
             )
             entries.append(entry)
