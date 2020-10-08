@@ -27,8 +27,12 @@ def load_from_etherscan(api_key: str, address: str, action: str) -> list:
     request = Request(url)
     request.add_header('Content-Type', 'application/json')
     request.add_header('Accept', 'application/json')
-    response = urlopen(request)
-    return json.loads(response.read())['result']
+    response = urlopen(request).read()
+    data = json.loads(response)
+    if int(data['status']) == 1 or data['message'] == 'No transactions found':
+        return data['result']
+    else:
+        raise RuntimeError(response)
 
 
 def parse_timestamp(timestamp: str) -> datetime.datetime:
