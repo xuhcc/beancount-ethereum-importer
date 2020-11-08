@@ -42,7 +42,7 @@ class Importer(ImporterProtocol):
                 else:
                     account = self.config['income_account']
             else:
-                account = f'{self.account_map[address]}:{currency}'
+                account = f'{self.account_map[address]}:{currency.upper()}'
         return account
 
     def extract(self, file, existing_entries=None) -> list:
@@ -70,7 +70,7 @@ class Importer(ImporterProtocol):
                 )
                 posting_from = Posting(
                     account_from,
-                    Amount(-value, transfer['currency']),
+                    Amount(-value, transfer['currency'].upper()),
                     None, None, None, None,
                 )
                 postings.append(posting_from)
@@ -81,7 +81,7 @@ class Importer(ImporterProtocol):
                 )
                 posting_to = Posting(
                     account_to,
-                    Amount(value, transfer['currency']),
+                    Amount(value, transfer['currency'].upper()),
                     None, None, None, None,
                 )
                 postings.append(posting_to)
