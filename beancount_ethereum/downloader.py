@@ -5,23 +5,28 @@ from decimal import Decimal
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-ETHERSCAN_API_URL = 'http://api.etherscan.io/api'
 MINER = '0xffffffffffffffffffffffffffffffffffffffff'
 WEI = 10 ** 18
 
 
-def load_from_etherscan(api_key: str, address: str, action: str) -> list:
+def make_api_request(
+    api_url: str,
+    api_key: str,
+    address: str,
+    action: str,
+) -> list:
     """
-    https://etherscan.io/apis#accounts
+    Load data from block explorer API
     """
     params = {
         'module': 'account',
         'action': action,
         'address': address,
         'sort': 'asc',
-        'apikey': api_key,
     }
-    url = f'{ETHERSCAN_API_URL}?{urlencode(params)}'
+    if api_key is not None:
+        params['apikey'] = api_key
+    url = f'{api_url}?{urlencode(params)}'
     request = Request(url)
     request.add_header('Content-Type', 'application/json')
     request.add_header('Accept', 'application/json')
@@ -33,9 +38,9 @@ def load_from_etherscan(api_key: str, address: str, action: str) -> list:
         raise RuntimeError(response)
 
 
-def get_normal_transactions(api_key: str, address: str) -> list:
+def get_normal_transactions(api_url: str, api_key: str, address: str) -> list:
     transactions = []
-    for item in load_from_etherscan(api_key, address, 'txlist'):
+    for item in make_api_request(api_url, api_key, address, 'txlist'):
         if int(item['isError']) == 0:
             transaction = {
                 'tx_id': item['hash'],
@@ -61,9 +66,9 @@ def get_normal_transactions(api_key: str, address: str) -> list:
     return transactions
 
 
-def get_internal_transactions(api_key: str, address: str) -> list:
+def get_internal_transactions(api_url: str, api_key: str, address: str) -> list:
     transactions = []
-    for item in load_from_etherscan(api_key, address, 'txlistinternal'):
+    for item in make_api_request(api_url, api_key, address, 'txlistinternal'):
         transaction = {
             'tx_id': item['hash'],
             'time': int(item['timeStamp']),
@@ -76,9 +81,9 @@ def get_internal_transactions(api_key: str, address: str) -> list:
     return transactions
 
 
-def get_erc20_transfers(api_key: str, address: str) -> list:
+def get_erc20_transfers(api_url: str, api_key: str, address: str) -> list:
     transactions = []
-    for item in load_from_etherscan(api_key, address, 'tokentx'):
+    for item in make_api_request(api_url, api_key, address, 'tokentx'):
         transaction = {
             'tx_id': item['hash'],
             'time': int(item['timeStamp']),
@@ -94,12 +99,13 @@ def get_erc20_transfers(api_key: str, address: str) -> list:
 
 def main(config: dict, output_dir: str):
     addresses = config['account_map'].keys()
-    api_key = config['etherscan_api_key']
+    api_url = config['block_explorer_api_url']
+    api_key = config['block_explorer_api_key']
     transactions = []
     for address in addresses:
-        transactions += get_normal_transactions(api_key, address)
-        transactions += get_internal_transactions(api_key, address)
-        transactions += get_erc20_transfers(api_key, address)
+        transactions += get_normal_transactions(api_url, api_key, address)
+        transactions += get_internal_transactions(api_url, api_key, address)
+        transactions += get_erc20_transfers(api_url, api_key, address)
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, 'transactions.json')
     with open(output_file_path, 'w') as output_file:

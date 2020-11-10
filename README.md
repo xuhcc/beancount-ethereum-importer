@@ -4,9 +4,11 @@
 
 Example of configuration file: [config.json](config.json.example).
 
-## Usage
+`beancount-ethereum` can load data from [Etherscan](https://etherscan.io/) or block explorers with similar API like [Blockscout](https://blockscout.com/poa/xdai/).
 
-Get API key on https://etherscan.io/
+If you are using Etherscan, get your API key at https://etherscan.io/.
+
+## Usage
 
 Download transactions to file:
 
@@ -14,7 +16,7 @@ Download transactions to file:
 python beancount_ethereum/downloader.py --config=config.json --output-dir=downloads
 ```
 
-Add importer to import configuration ([example](import_config.py)):
+Add importer to import configuration ([example](import_config.py.example)):
 
 ```
 import beancount_ethereum
