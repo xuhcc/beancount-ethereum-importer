@@ -5,3 +5,4 @@ __pycache__/
 downloads/
 *.json
 *.beancount
+import_config.py
