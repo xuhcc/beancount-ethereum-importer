@@ -11,9 +11,17 @@ from beancount.core.number import D
 
 class Importer(ImporterProtocol):
 
-    def __init__(self, config_path='config.json'):
+    def __init__(
+        self,
+        config_path='config.json',
+        max_delta=90,  # days
+    ):
         with open(config_path, 'r') as config_file:
             self.config = json.load(config_file)
+        self.min_date = (
+            datetime.datetime.now() -
+            datetime.timedelta(days=max_delta)
+        )
 
     def name(self) -> str:
         return 'ethereum'
@@ -47,7 +55,14 @@ class Importer(ImporterProtocol):
         return account
 
     def extract(self, file, existing_entries=None) -> list:
-        # TODO: check for duplicates
+        # Get list of existing transactions
+        existing_txs = []
+        if existing_entries is not None:
+            for item in existing_entries:
+                if isinstance(item, Transaction) and 'txid' in item.meta:
+                    existing_txs.append(item.meta['txid'])
+
+        # Load new transactions
         with open(file.name, 'r') as _file:
             transactions = json.load(_file)
         entries = []
@@ -59,8 +74,7 @@ class Importer(ImporterProtocol):
             postings = []
             for transfer in transfers:
                 if tx_date is None:
-                    tx_date = datetime.datetime.\
-                        fromtimestamp(transfer['time']).date()
+                    tx_date = datetime.datetime.fromtimestamp(transfer['time'])
                 value = D(transfer['value'])
                 if value == 0:
                     continue
@@ -87,9 +101,14 @@ class Importer(ImporterProtocol):
                 )
                 postings.append(posting_to)
 
+            if tx_id in existing_txs:
+                continue
+            if tx_date < self.min_date:
+                continue
+
             entry = Transaction(
                 new_metadata('', 0, metadata),
-                tx_date,
+                tx_date.date(),
                 '*',
                 '',
                 '',
