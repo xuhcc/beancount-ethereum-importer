@@ -8,6 +8,8 @@ from beancount.core.amount import Amount
 from beancount.core.data import EMPTY_SET, Posting, Transaction, new_metadata
 from beancount.core.number import D
 
+MINER = '0xffffffffffffffffffffffffffffffffffffffff'
+
 
 class Importer(ImporterProtocol):
 
@@ -35,24 +37,42 @@ class Importer(ImporterProtocol):
         return {key.lower(): value for key, value
                 in self.config['account_map'].items()}
 
-    def _find_account(
+    def _create_posting(
         self,
         address: str,
         value: D,
         currency: str,
-    ) -> str:
-        if address == '0xffffffffffffffffffffffffffffffffffffffff':
+    ) -> tuple:
+        if address == MINER:
             assert currency == 'ETH'
             account = self.config['fee_account']
+            payee = None
         else:
             if address not in self.account_map:
-                if value > 0:
+                if value == 0:
+                    # Do not create posting
+                    account = None
+                elif value > 0:
                     account = self.config['expenses_account']
                 else:
                     account = self.config['income_account']
+                payee = address
             else:
-                account = f'{self.account_map[address]}:{currency.upper()}'
-        return account
+                if value == 0:
+                    # Do not create posting
+                    account = None
+                else:
+                    account = f'{self.account_map[address]}:{currency}'
+                payee = None
+        if account:
+            posting = Posting(
+                account,
+                Amount(value, currency),
+                None, None, None, None,
+            )
+        else:
+            posting = None
+        return posting, payee
 
     def extract(self, file, existing_entries=None) -> list:
         # Get list of existing transactions
@@ -72,34 +92,29 @@ class Importer(ImporterProtocol):
             tx_date = None
             metadata = {'txid': tx_id}
             postings = []
+            payees = []
             for transfer in transfers:
                 if tx_date is None:
                     tx_date = datetime.datetime.fromtimestamp(transfer['time'])
                 value = D(transfer['value'])
-                if value == 0:
-                    continue
-                account_from = self._find_account(
+                posting_from, payee = self._create_posting(
                     transfer['from'],
                     -value,
-                    transfer['currency'],
+                    transfer['currency'].upper(),
                 )
-                posting_from = Posting(
-                    account_from,
-                    Amount(-value, transfer['currency'].upper()),
-                    None, None, None, None,
-                )
-                postings.append(posting_from)
-                account_to = self._find_account(
+                if posting_from:
+                    postings.append(posting_from)
+                if payee:
+                    payees.append(payee)
+                posting_to, payee = self._create_posting(
                     transfer['to'],
                     value,
-                    transfer['currency'],
+                    transfer['currency'].upper(),
                 )
-                posting_to = Posting(
-                    account_to,
-                    Amount(value, transfer['currency'].upper()),
-                    None, None, None, None,
-                )
-                postings.append(posting_to)
+                if posting_to:
+                    postings.append(posting_to)
+                if payee is not None:
+                    payees.append(payee)
 
             if tx_id in existing_txs:
                 continue
@@ -110,7 +125,7 @@ class Importer(ImporterProtocol):
                 new_metadata('', 0, metadata),
                 tx_date.date(),
                 '*',
-                '',
+                ', '.join(payees),
                 '',
                 EMPTY_SET,
                 EMPTY_SET,
