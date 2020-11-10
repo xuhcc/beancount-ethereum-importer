@@ -19,7 +19,8 @@ class Importer(ImporterProtocol):
         return 'ethereum'
 
     def identify(self, file) -> bool:
-        return os.path.basename(file.name) == 'transactions.json'
+        name = self.config['name']
+        return os.path.basename(file.name) == f'{name}.json'
 
     @property
     def account_map(self):

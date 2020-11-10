@@ -7,7 +7,11 @@ from urllib.request import Request, urlopen
 
 MINER = '0xffffffffffffffffffffffffffffffffffffffff'
 WEI = 10 ** 18
-
+NO_TRANSACTIONS = [
+    'No transactions found',
+    'No internal transactions found',
+    'No token transfers found',
+]
 
 def make_api_request(
     api_url: str,
@@ -30,9 +34,10 @@ def make_api_request(
     request = Request(url)
     request.add_header('Content-Type', 'application/json')
     request.add_header('Accept', 'application/json')
+    request.add_header('User-Agent', 'python-requests/2.24.0')
     response = urlopen(request).read()
     data = json.loads(response)
-    if int(data['status']) == 1 or data['message'] == 'No transactions found':
+    if int(data['status']) == 1 or data['message'] in NO_TRANSACTIONS:
         return data['result']
     else:
         raise RuntimeError(response)
@@ -70,7 +75,8 @@ def get_internal_transactions(api_url: str, api_key: str, address: str) -> list:
     transactions = []
     for item in make_api_request(api_url, api_key, address, 'txlistinternal'):
         transaction = {
-            'tx_id': item['hash'],
+            # Blockscout uses 'transactionHash' instead of 'hash'
+            'tx_id': item['hash'] if 'hash' in item else item['transactionHash'],
             'time': int(item['timeStamp']),
             'from': item['from'],
             'to': item['to'],
@@ -84,6 +90,9 @@ def get_internal_transactions(api_url: str, api_key: str, address: str) -> list:
 def get_erc20_transfers(api_url: str, api_key: str, address: str) -> list:
     transactions = []
     for item in make_api_request(api_url, api_key, address, 'tokentx'):
+        if item['tokenDecimal'] == '':
+            # Skip NFTs (Blockscout)
+            continue
         transaction = {
             'tx_id': item['hash'],
             'time': int(item['timeStamp']),
@@ -98,6 +107,7 @@ def get_erc20_transfers(api_url: str, api_key: str, address: str) -> list:
 
 
 def main(config: dict, output_dir: str):
+    name = config['name']
     addresses = config['account_map'].keys()
     api_url = config['block_explorer_api_url']
     api_key = config['block_explorer_api_key']
@@ -107,7 +117,7 @@ def main(config: dict, output_dir: str):
         transactions += get_internal_transactions(api_url, api_key, address)
         transactions += get_erc20_transfers(api_url, api_key, address)
     os.makedirs(output_dir, exist_ok=True)
-    output_file_path = os.path.join(output_dir, 'transactions.json')
+    output_file_path = os.path.join(output_dir, f'{name}.json')
     with open(output_file_path, 'w') as output_file:
         json.dump(transactions, output_file, indent=4, default=str)
     print(f'Transactions saved to {output_file_path}')
