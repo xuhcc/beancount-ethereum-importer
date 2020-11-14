@@ -13,6 +13,7 @@ NO_TRANSACTIONS = [
     'No token transfers found',
 ]
 
+
 def make_api_request(
     api_url: str,
     api_key: str,
@@ -43,7 +44,11 @@ def make_api_request(
         raise RuntimeError(response)
 
 
-def get_normal_transactions(api_url: str, api_key: str, address: str) -> list:
+def get_normal_transactions(
+    api_url: str,
+    api_key: str,
+    address: str,
+) -> list:
     transactions = []
     for item in make_api_request(api_url, api_key, address, 'txlist'):
         if int(item['isError']) == 0:
@@ -71,12 +76,17 @@ def get_normal_transactions(api_url: str, api_key: str, address: str) -> list:
     return transactions
 
 
-def get_internal_transactions(api_url: str, api_key: str, address: str) -> list:
+def get_internal_transactions(
+    api_url: str,
+    api_key: str,
+    address: str,
+) -> list:
     transactions = []
     for item in make_api_request(api_url, api_key, address, 'txlistinternal'):
         transaction = {
             # Blockscout uses 'transactionHash' instead of 'hash'
-            'tx_id': item['hash'] if 'hash' in item else item['transactionHash'],
+            'tx_id': (item['hash'] if 'hash' in item
+                      else item['transactionHash']),
             'time': int(item['timeStamp']),
             'from': item['from'],
             'to': item['to'],
@@ -87,7 +97,11 @@ def get_internal_transactions(api_url: str, api_key: str, address: str) -> list:
     return transactions
 
 
-def get_erc20_transfers(api_url: str, api_key: str, address: str) -> list:
+def get_erc20_transfers(
+    api_url: str,
+    api_key: str,
+    address: str,
+) -> list:
     transactions = []
     for item in make_api_request(api_url, api_key, address, 'tokentx'):
         if item['tokenDecimal'] == '':
