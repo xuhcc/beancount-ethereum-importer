@@ -86,9 +86,15 @@ class Importer(ImporterProtocol):
         with open(file.name, 'r') as _file:
             transactions = json.load(_file)
         entries = []
-        key_func = lambda tx: tx['tx_id']  # noqa: E731
-        transactions = sorted(transactions, key=key_func)
-        for tx_id, transfers in groupby(transactions, key_func):
+        sorted_transactions = sorted(
+            transactions,
+            key=lambda tx: (tx['time'], tx['tx_id']),
+        )
+        grouped_transactions = groupby(
+            sorted_transactions,
+            lambda tx: tx['tx_id'],
+        )
+        for tx_id, transfers in grouped_transactions:
             tx_date = None
             metadata = {'txid': tx_id}
             postings = []
