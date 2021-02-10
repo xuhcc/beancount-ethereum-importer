@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import time
 from decimal import Decimal
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -16,14 +17,19 @@ NO_TRANSACTIONS = [
 
 class BlockExplorerApi:
 
-    def __init__(self, api_url: str, api_key: str):
+    def __init__(self, api_url: str, api_key: str, delay: float = 0.0):
         self.api_url = api_url
         self.api_key = api_key
+        self.delay = delay
+        self._last_request_timestamp = 0.0
 
     def _make_api_request(self, address: str, action: str) -> list:
         """
         Load data from block explorer API
         """
+        last_request_delta = time.time() - self._last_request_timestamp
+        if last_request_delta < self.delay:
+            time.sleep(self.delay - last_request_delta)
         params = {
             'module': 'account',
             'action': action,
@@ -38,6 +44,7 @@ class BlockExplorerApi:
         request.add_header('Accept', 'application/json')
         request.add_header('User-Agent', 'python-requests/2.24.0')
         response = urlopen(request).read()
+        self._last_request_timestamp = time.time()
         data = json.loads(response)
         if int(data['status']) == 1 or data['message'] in NO_TRANSACTIONS:
             return data['result']
@@ -112,6 +119,7 @@ def main(config: dict, output_dir: str):
     api = BlockExplorerApi(
         config['block_explorer_api_url'],
         config['block_explorer_api_key'],
+        config.get('block_explorer_api_request_delay', 0.0),
     )
     transactions = []
     for address in addresses:

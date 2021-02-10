@@ -7,5 +7,6 @@
     "expenses_account": "Expenses:Other",
     "income_account": "Income:Other",
     "block_explorer_api_url": "http://api.etherscan.io/api",
-    "block_explorer_api_key": "ABCD1234"
+    "block_explorer_api_key": "ABCD1234",
+    "block_explorer_api_request_delay": 0
 }
