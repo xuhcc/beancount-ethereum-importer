@@ -17,11 +17,12 @@ NO_TRANSACTIONS = [
 
 class BlockExplorerApi:
 
-    def __init__(self, api_url: str, api_key: str, delay: float = 0.0):
+    def __init__(self, api_url: str, api_key: str, delay: float = 0.0, base_currency: str = 'ETH'):
         self.api_url = api_url
         self.api_key = api_key
         self.delay = delay
         self._last_request_timestamp = 0.0
+        self.base_currency = base_currency
 
     def _make_api_request(self, address: str, action: str) -> list:
         """
@@ -60,7 +61,7 @@ class BlockExplorerApi:
                     'time': int(item['timeStamp']),
                     'from': item['from'],
                     'to': item['to'],
-                    'currency': 'ETH',
+                    'currency': self.base_currency,
                     'value': Decimal(item['value']) / WEI,
                 }
                 transactions.append(transaction)
@@ -70,7 +71,7 @@ class BlockExplorerApi:
                     'time': int(item['timeStamp']),
                     'from': item['from'],
                     'to': MINER,
-                    'currency': 'ETH',
+                    'currency': self.base_currency,
                     'value': (Decimal(item['gasUsed']) *
                               Decimal(item['gasPrice']) /
                               WEI),
@@ -88,7 +89,7 @@ class BlockExplorerApi:
                 'time': int(item['timeStamp']),
                 'from': item['from'],
                 'to': item['to'],
-                'currency': 'ETH',
+                'currency': self.base_currency,
                 'value': Decimal(item['value']) / WEI,
             }
             transactions.append(transaction)
@@ -120,6 +121,7 @@ def main(config: dict, output_dir: str):
         config['block_explorer_api_url'],
         config['block_explorer_api_key'],
         config.get('block_explorer_api_request_delay', 0.0),
+        config['base_currency'],
     )
     transactions = []
     for address in addresses:
@@ -144,3 +146,4 @@ if __name__ == '__main__':
         config = json.load(config_file)
     output_dir = os.path.join(os.getcwd(), args.output_dir)
     main(config, output_dir)
+    

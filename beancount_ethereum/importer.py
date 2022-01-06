@@ -44,7 +44,7 @@ class Importer(ImporterProtocol):
         currency: str,
     ) -> tuple:
         if address == MINER:
-            assert currency == 'ETH'
+            assert currency == self.config['base_currency']
             account = self.config['fee_account']
             payee = None
         else:

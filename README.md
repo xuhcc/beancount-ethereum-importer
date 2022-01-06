@@ -22,7 +22,7 @@ Add importer to import configuration ([example](import_config.py.example)):
 import beancount_ethereum
 
 CONFIG = [
-    beancount_ethereum.importer.Importer(config='config.json'),
+    beancount_ethereum.importer.Importer(config_path='config.json'),
 ]
 ```
 
