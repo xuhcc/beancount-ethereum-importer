@@ -37,17 +37,36 @@ class Importer(ImporterProtocol):
         return {key.lower(): value for key, value
                 in self.config['account_map'].items()}
 
+    def account_suffix(self, currency):
+        if 'currency_map' in self.config:
+            for keyval in self.config['currency_map']:
+                if currency.lower() == keyval['blockchain_currency'].lower():
+                    return keyval['account_suffix']
+            return currency
+        else:            
+            return currency
+
+    def beancount_commodity(self, currency):
+        if 'currency_map' in self.config:       
+            for keyval in self.config['currency_map']:
+                if currency.lower() == keyval['blockchain_currency'].lower():
+                    return keyval['beancount_commodity']
+            return currency
+        else:           
+            return currency
+
     def _create_posting(
         self,
         address: str,
         value: D,
         currency: str,
     ) -> tuple:
+
         if address == MINER:
             assert currency == self.config['base_currency']
             account = self.config['fee_account']
             payee = None
-        else:
+        else:            
             if address not in self.account_map:
                 if value == 0:
                     # Do not create posting
@@ -62,12 +81,12 @@ class Importer(ImporterProtocol):
                     # Do not create posting
                     account = None
                 else:
-                    account = f'{self.account_map[address]}:{currency}'
+                    account = f'{self.account_map[address]}:{self.account_suffix(currency)}'
                 payee = None
         if account:
             posting = Posting(
                 account,
-                Amount(value, currency),
+                Amount(value, self.beancount_commodity(currency)),
                 None, None, None, None,
             )
         else:
