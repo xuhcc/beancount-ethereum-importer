@@ -8,6 +8,7 @@ from beancount.core.amount import Amount
 from beancount.core.data import EMPTY_SET, Posting, Transaction, new_metadata
 from beancount.core.number import D
 
+DEFAULT_CURRENCY = 'ETH'
 MINER = '0xffffffffffffffffffffffffffffffffffffffff'
 
 
@@ -65,7 +66,7 @@ class Importer(ImporterProtocol):
         currency: str,
     ) -> tuple:
         if address == MINER:
-            assert currency == self.config['base_currency']
+            assert currency == self.config.get('base_currency', DEFAULT_CURRENCY)
             account = self.config['fee_account']
             payee = None
         else:
