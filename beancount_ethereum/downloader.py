@@ -6,6 +6,7 @@ from decimal import Decimal
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+DEFAULT_CURRENCY = 'ETH'
 MINER = '0xffffffffffffffffffffffffffffffffffffffff'
 WEI = 10 ** 18
 NO_TRANSACTIONS = [
@@ -17,7 +18,7 @@ NO_TRANSACTIONS = [
 
 class BlockExplorerApi:
 
-    def __init__(self, api_url: str, api_key: str, delay: float = 0.0, base_currency: str = 'ETH'):
+    def __init__(self, api_url: str, api_key: str, delay: float = 0.0, base_currency: str = DEFAULT_CURRENCY):
         self.api_url = api_url
         self.api_key = api_key
         self.delay = delay
@@ -121,7 +122,7 @@ def main(config: dict, output_dir: str):
         config['block_explorer_api_url'],
         config['block_explorer_api_key'],
         config.get('block_explorer_api_request_delay', 0.0),
-        config['base_currency'],
+        config.get('base_currency', DEFAULT_CURRENCY),
     )
     transactions = []
     for address in addresses:
