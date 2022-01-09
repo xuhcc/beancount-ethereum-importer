@@ -17,6 +17,7 @@ class Importer(ImporterProtocol):
         self,
         config_path='config.json',
         max_delta=90,  # days
+        debug: bool = False
     ):
         with open(config_path, 'r') as config_file:
             self.config = json.load(config_file)
@@ -24,6 +25,7 @@ class Importer(ImporterProtocol):
             datetime.datetime.now() -
             datetime.timedelta(days=max_delta)
         )
+        self.debug = debug
 
     def name(self) -> str:
         return 'ethereum'
@@ -37,22 +39,32 @@ class Importer(ImporterProtocol):
         return {key.lower(): value for key, value
                 in self.config['account_map'].items()}
 
+    def print_debug(self, string):
+        if self.debug:
+            print(string)
+
     def account_suffix(self, currency):
         if 'currency_map' in self.config:
-            for keyval in self.config['currency_map']:
-                if currency.lower() == keyval['blockchain_currency'].lower():
-                    return keyval['account_suffix']
-            return currency
-        else:            
+            if currency in self.config['currency_map']:
+                    if 'account_suffix' in self.config['currency_map'][currency]:
+                        self.print_debug("currency_map for {} has been found, and account_suffix is set".format(currency))
+                        return self.config['currency_map'][currency]['account_suffix']
+                    else:
+                        self.print_debug("currency_map for {} has been found, and account_suffix is NOT set: switching to commodity value".format(currency))
+                        return self.config['currency_map'][currency]['commodity']
+            else:
+                self.print_debug("currency_map for {} has not been found: keeping default".format(currency))
+                return currency
+        else:
             return currency
 
-    def beancount_commodity(self, currency):
-        if 'currency_map' in self.config:       
-            for keyval in self.config['currency_map']:
-                if currency.lower() == keyval['blockchain_currency'].lower():
-                    return keyval['beancount_commodity']
-            return currency
-        else:           
+    def commodity(self, currency):
+        if 'currency_map' in self.config:
+            if currency in self.config['currency_map']:
+                return self.config['currency_map'][currency]['commodity']
+            else:
+                return currency
+        else:
             return currency
 
     def _create_posting(
@@ -61,12 +73,11 @@ class Importer(ImporterProtocol):
         value: D,
         currency: str,
     ) -> tuple:
-
         if address == MINER:
             assert currency == self.config['base_currency']
             account = self.config['fee_account']
             payee = None
-        else:            
+        else:
             if address not in self.account_map:
                 if value == 0:
                     # Do not create posting
@@ -86,7 +97,7 @@ class Importer(ImporterProtocol):
         if account:
             posting = Posting(
                 account,
-                Amount(value, self.beancount_commodity(currency)),
+                Amount(value, self.commodity(currency)),
                 None, None, None, None,
             )
         else:
