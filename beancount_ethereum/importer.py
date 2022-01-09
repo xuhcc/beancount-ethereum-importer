@@ -33,23 +33,23 @@ class Importer(ImporterProtocol):
         return os.path.basename(file.name) == f'{name}.json'
 
     @property
-    def account_map(self):
+    def account_map(self) -> dict:
         return {key.lower(): value for key, value
                 in self.config['account_map'].items()}
 
-    def account_suffix(self, currency):
+    def account_suffix(self, currency: str) -> str:
         if 'currency_map' in self.config:
             if currency in self.config['currency_map']:
-                    if 'account_suffix' in self.config['currency_map'][currency]:
-                        return self.config['currency_map'][currency]['account_suffix']
-                    else:
-                        return self.config['currency_map'][currency]['commodity']
+                if 'account_suffix' in self.config['currency_map'][currency]:
+                    return self.config['currency_map'][currency]['account_suffix']
+                else:
+                    return self.config['currency_map'][currency]['commodity']
             else:
                 return currency
         else:
             return currency
 
-    def commodity(self, currency):
+    def commodity(self, currency: str) -> str:
         if 'currency_map' in self.config:
             if currency in self.config['currency_map']:
                 return self.config['currency_map'][currency]['commodity']
@@ -150,7 +150,7 @@ class Importer(ImporterProtocol):
 
             entry = Transaction(
                 new_metadata('', 0, metadata),
-                tx_date.date(),
+                tx_date.date(),  # type: ignore
                 '*',
                 ', '.join(payees),
                 '',
