@@ -37,6 +37,27 @@ class Importer(ImporterProtocol):
         return {key.lower(): value for key, value
                 in self.config['account_map'].items()}
 
+    def account_suffix(self, currency):
+        if 'currency_map' in self.config:
+            if currency in self.config['currency_map']:
+                    if 'account_suffix' in self.config['currency_map'][currency]:
+                        return self.config['currency_map'][currency]['account_suffix']
+                    else:
+                        return self.config['currency_map'][currency]['commodity']
+            else:
+                return currency
+        else:
+            return currency
+
+    def commodity(self, currency):
+        if 'currency_map' in self.config:
+            if currency in self.config['currency_map']:
+                return self.config['currency_map'][currency]['commodity']
+            else:
+                return currency
+        else:
+            return currency
+
     def _create_posting(
         self,
         address: str,
@@ -62,12 +83,12 @@ class Importer(ImporterProtocol):
                     # Do not create posting
                     account = None
                 else:
-                    account = f'{self.account_map[address]}:{currency}'
+                    account = f'{self.account_map[address]}:{self.account_suffix(currency)}'
                 payee = None
         if account:
             posting = Posting(
                 account,
-                Amount(value, currency),
+                Amount(value, self.commodity(currency)),
                 None, None, None, None,
             )
         else:
