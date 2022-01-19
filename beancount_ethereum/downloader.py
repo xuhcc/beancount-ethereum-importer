@@ -115,10 +115,11 @@ class BlockExplorerApi:
             transactions.append(transaction)
         return transactions
 
-    def get_normal_balances(self, address: str) -> list:
+    def get_base_currency_balances(self, address: str) -> list:
         balances = []
         balance = {
             'time': int(datetime.datetime.now().timestamp()),
+            'address': address,
             'currency': self.base_currency,
             'balance': Decimal(self._make_api_request(address, 'balance')) / WEI,
         }
@@ -140,7 +141,7 @@ def main(config: dict, output_dir: str):
         transactions += api.get_normal_transactions(address)
         transactions += api.get_internal_transactions(address)
         transactions += api.get_erc20_transfers(address)
-        balances += api.get_normal_balances(address)
+        balances += api.get_base_currency_balances(address)
     os.makedirs(output_dir, exist_ok=True)
     output_file_path = os.path.join(output_dir, f'{name}.json')
     with open(output_file_path, 'w') as output_file:
