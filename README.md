@@ -23,6 +23,7 @@ import beancount_ethereum
 
 CONFIG = [
     beancount_ethereum.importer.Importer(config_path='config.json'),
+    beancount_ethereum.importer_balances.Importer(config_path='config.json'),
 ]
 ```
 
