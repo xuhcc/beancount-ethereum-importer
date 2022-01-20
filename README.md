@@ -1,5 +1,5 @@
 # Ethereum transaction importer for Beancount
-#
+
 ## Configuration
 
 Example of configuration file: [config.json](config.json.example).
