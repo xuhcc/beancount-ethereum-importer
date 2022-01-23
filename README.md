@@ -17,13 +17,13 @@ python beancount_ethereum/downloader.py --config=config.json --output-dir=downlo
 ```
 
 Add importer to import configuration ([example](import_config.py.example)):
+import_balances statement is optional and default to False.
 
 ```
 import beancount_ethereum
 
 CONFIG = [
-    beancount_ethereum.importer.Importer(config_path='config.json'),
-    beancount_ethereum.importer_balances.Importer(config_path='config.json'),
+    beancount_ethereum.importer.Importer(config_path='config.json', import_balances=True),
 ]
 ```
 
