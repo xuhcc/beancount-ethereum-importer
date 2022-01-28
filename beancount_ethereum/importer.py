@@ -5,7 +5,7 @@ from itertools import groupby
 
 from beancount.ingest.importer import ImporterProtocol
 from beancount.core.amount import Amount
-from beancount.core.data import EMPTY_SET, Posting, Transaction, new_metadata
+from beancount.core.data import EMPTY_SET, Posting, Transaction, new_metadata, Balance
 from beancount.core.number import D
 
 DEFAULT_CURRENCY = 'ETH'
@@ -13,30 +13,30 @@ MINER = '0xffffffffffffffffffffffffffffffffffffffff'
 
 
 class Importer(ImporterProtocol):
-
     def __init__(
         self,
         config_path='config.json',
         max_delta=90,  # days
+        import_balances=False,
     ):
         with open(config_path, 'r') as config_file:
             self.config = json.load(config_file)
-        self.min_date = (
-            datetime.datetime.now() -
-            datetime.timedelta(days=max_delta)
-        )
+        self.min_date = datetime.datetime.now() - datetime.timedelta(days=max_delta)
+        self.import_balances = import_balances
 
     def name(self) -> str:
         return 'ethereum'
 
     def identify(self, file) -> bool:
         name = self.config['name']
-        return os.path.basename(file.name) == f'{name}.json'
+        return os.path.basename(file.name) == f'{name}.json'  or (
+            self.import_balances
+            and os.path.basename(file.name) == f'{name}-balances.json'
+        )
 
     @property
     def account_map(self) -> dict:
-        return {key.lower(): value for key, value
-                in self.config['account_map'].items()}
+        return {key.lower(): value for key, value in self.config['account_map'].items()}
 
     def account_suffix(self, currency: str) -> str:
         if 'currency_map' in self.config:
@@ -84,19 +84,49 @@ class Importer(ImporterProtocol):
                     # Do not create posting
                     account = None
                 else:
-                    account = f'{self.account_map[address]}:{self.account_suffix(currency)}'
+                    account = (
+                        f"{self.account_map[address]}:{self.account_suffix(currency)}"
+                    )
                 payee = None
         if account:
             posting = Posting(
                 account,
                 Amount(value, self.commodity(currency)),
-                None, None, None, None,
+                None,
+                None,
+                None,
+                None,
             )
         else:
             posting = None
         return posting, payee
 
-    def extract(self, file, existing_entries=None) -> list:
+    def extract_balances(self, file) -> list:
+
+        with open(file.name, 'r') as _file:
+            balances = json.load(_file)
+        entries = []
+
+        for record in balances:
+            meta = new_metadata(file.name, 0)
+            balance_date = datetime.datetime.fromtimestamp(record["time"])
+            currency = record['currency']
+            account = f"{self.account_map[record['address']]}:{self.account_suffix(currency)}"
+            balance = record['balance']
+
+            entry = Balance(
+                meta,
+                balance_date,
+                account,
+                Amount(D(balance), self.commodity(currency)),
+                None,
+                None,
+            )
+
+            entries.append(entry)
+        return entries
+
+    def extract_transactions(self, file, existing_entries=None) -> list:
         # Get list of existing transactions
         existing_txs = []
         if existing_entries is not None:
@@ -162,3 +192,9 @@ class Importer(ImporterProtocol):
             entries.append(entry)
 
         return entries
+
+    def extract(self, file, existing_entries=None) -> list:
+        if file.name.endswith('balances.json'):
+            return self.extract_balances(file)
+        else:
+            return self.extract_transactions(file, existing_entries)
