@@ -119,7 +119,7 @@ class BlockExplorerApi:
         balances = []
         balance = {
             'time': int(datetime.datetime.now().timestamp()),
-            'address': address,
+            'address': address.lower(),
             'currency': self.base_currency,
             'balance': Decimal(self._make_api_request(address, 'balance')) / WEI,
         }
