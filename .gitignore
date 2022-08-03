@@ -6,3 +6,8 @@ downloads/
 *.json
 *.beancount
 import_config.py
+
+# Files created from building package
+build
+dist
+*.egg-info
