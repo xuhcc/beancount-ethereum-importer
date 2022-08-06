@@ -11,7 +11,7 @@ setup(
     version='1.4.2',
     description='Ethereum transaction importer for Beancount',
     long_description='file: README.md',
-    long_description_content_type='type/markdown',
+    long_description_content_type='text/markdown',
     packages=['beancount_ethereum'],
     license='GPLv3',
     author='xuhcc',
