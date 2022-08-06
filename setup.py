@@ -1,7 +1,8 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from pathlib import Path
+from setuptools import setup
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
@@ -10,7 +11,7 @@ setup(
     name='beancount-ethereum',
     version='1.4.2',
     description='Ethereum transaction importer for Beancount',
-    long_description='file: README.md',
+    long_description=long_description,
     long_description_content_type='text/markdown',
     packages=['beancount_ethereum'],
     license='GPLv3',

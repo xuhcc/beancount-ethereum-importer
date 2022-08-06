@@ -5,3 +5,6 @@ _deploy:
 	twine upload dist/*
 
 deploy: build _deploy
+
+clean:
+	rm -r build/ dist/
