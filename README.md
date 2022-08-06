@@ -8,12 +8,26 @@ Example of configuration file: [config.json](config.json.example).
 
 If you are using Etherscan, get your API key at https://etherscan.io/.
 
+## Install
+
+Install `beancount-ethereum`:
+
+```
+pip install beancount-ethereum
+```
+
+To install from source:
+
+```
+pip install -e .
+```
+
 ## Usage
 
 Download transactions to file:
 
 ```
-python beancount_ethereum/downloader.py --config=config.json --output-dir=downloads
+beancount-ethereum --config=config.json --output-dir=downloads
 ```
 
 Add importer to import configuration ([example](import_config.py.example)):
@@ -36,4 +50,12 @@ Import transactions with `bean-extract`:
 
 ```
 bean-extract -e test.beancount import_config.py downloads
+```
+
+## Deploy
+
+Deploy `beancount-ethereum`:
+
+```
+make deploy
 ```
