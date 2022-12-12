@@ -43,9 +43,9 @@ class BlockExplorerApi:
             params['apikey'] = self.api_key
         url = f'{self.api_url}?{urlencode(params)}'
         request = Request(url)
-        request.add_header('Content-Type', 'application/json')
-        request.add_header('Accept', 'application/json')
-        request.add_header('User-Agent', 'python-requests/2.24.0')
+        #request.add_header('Content-Type', 'application/json')
+        #request.add_header('Accept', 'application/json')
+        request.add_header('User-Agent', 'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)')
         response = urlopen(request).read()
         self._last_request_timestamp = time.time()
         data = json.loads(response)
